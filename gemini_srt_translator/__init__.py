@@ -37,6 +37,7 @@ from .utils import upgrade_package
 
 gemini_api_key: str = os.getenv("GEMINI_API_KEY", None)
 gemini_api_key2: str = os.getenv("GEMINI_API_KEY2", None)
+api_endpoint: str = os.getenv("API_ENDPOINT", None)
 target_language: str = None
 input_file: str = None
 output_file: str = None
@@ -82,7 +83,7 @@ def getmodels():
     Raises:
         Exception: If the Gemini API key is not provided.
     """
-    translator = GeminiSRTTranslator(gemini_api_key=gemini_api_key)
+    translator = GeminiSRTTranslator(gemini_api_key=gemini_api_key, api_endpoint=api_endpoint)
     return translator.getmodels()
 
 
@@ -105,7 +106,7 @@ def listmodels():
     Raises:
         Exception: If the Gemini API key is not provided.
     """
-    translator = GeminiSRTTranslator(gemini_api_key=gemini_api_key)
+    translator = GeminiSRTTranslator(gemini_api_key=gemini_api_key, api_endpoint=api_endpoint)
     models = translator.getmodels()
     if models:
         print("Available models:\n")
@@ -211,6 +212,7 @@ def translate():
     params = {
         "gemini_api_key": gemini_api_key,
         "gemini_api_key2": gemini_api_key2,
+        "api_endpoint": api_endpoint,
         "target_language": target_language,
         "input_file": input_file,
         "output_file": output_file,

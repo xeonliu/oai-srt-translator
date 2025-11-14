@@ -1,6 +1,3 @@
-from google.genai import types
-
-
 def get_instruction(
     language: str, thinking: bool, thinking_compatible: bool, audio_file: str = None, description: str = None
 ) -> str:
@@ -64,49 +61,21 @@ def get_instruction(
     return instruction
 
 
-def get_safety_settings() -> list[types.SafetySetting]:
+def get_response_schema() -> dict:
     """
-    Get the safety settings for the translation model.
+    Get the response schema for the translation model in OpenAI JSON Schema format.
     """
-    return [
-        types.SafetySetting(
-            category=types.HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-            threshold=types.HarmBlockThreshold.BLOCK_NONE,
-        ),
-        types.SafetySetting(
-            category=types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-            threshold=types.HarmBlockThreshold.BLOCK_NONE,
-        ),
-        types.SafetySetting(
-            category=types.HarmCategory.HARM_CATEGORY_CIVIC_INTEGRITY,
-            threshold=types.HarmBlockThreshold.BLOCK_NONE,
-        ),
-        types.SafetySetting(
-            category=types.HarmCategory.HARM_CATEGORY_HARASSMENT,
-            threshold=types.HarmBlockThreshold.BLOCK_NONE,
-        ),
-        types.SafetySetting(
-            category=types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-            threshold=types.HarmBlockThreshold.BLOCK_NONE,
-        ),
-    ]
-
-
-def get_response_schema() -> types.Schema:
-    """
-    Get the response schema for the translation model.
-    """
-    return types.Schema(
-        type="ARRAY",
-        items=types.Schema(
-            type="OBJECT",
-            properties={
-                "index": types.Schema(type="STRING"),
-                "content": types.Schema(type="STRING"),
+    return {
+        "type": "array",
+        "items": {
+            "type": "object",
+            "properties": {
+                "index": {"type": "string"},
+                "content": {"type": "string"},
             },
-            required=["index", "content"],
-        ),
-    )
+            "required": ["index", "content"],
+        },
+    }
 
 
 if __name__ == "__main__":

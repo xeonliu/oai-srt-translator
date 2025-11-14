@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Command Line Interface for Gemini SRT Translator
+Command Line Interface for SRT Translator (OpenAI Compatible)
 """
 
 import argparse
@@ -16,7 +16,7 @@ from .logger import error, info, success
 
 def get_api_key_from_input() -> str:
     """Get API key from user input."""
-    return getpass.getpass("Enter your Gemini API key: ").strip()
+    return getpass.getpass("Enter your API key: ").strip()
 
 
 def get_api_key_from_env(key: str) -> Optional[str]:
@@ -60,6 +60,7 @@ def cmd_translate(args) -> None:
     # Set API keys
     gst.gemini_api_key = args.api_key or get_api_key_from_env("GEMINI_API_KEY") or get_api_key_from_input()
     gst.gemini_api_key2 = args.api_key2 or get_api_key_from_env("GEMINI_API_KEY2")
+    gst.api_endpoint = args.api_endpoint or get_api_key_from_env("API_ENDPOINT")
 
     # Validate input file
     if args.input_file:
@@ -138,6 +139,7 @@ def cmd_translate(args) -> None:
 def cmd_list_models(args) -> None:
     """Handle list-models command."""
     gst.gemini_api_key = args.api_key or get_api_key_from_env("GEMINI_API_KEY") or get_api_key_from_input()
+    gst.api_endpoint = args.api_endpoint or get_api_key_from_env("API_ENDPOINT")
 
     try:
         gst.listmodels()
@@ -150,16 +152,20 @@ def create_parser() -> argparse.ArgumentParser:
     """Create and configure argument parser."""
     parser = argparse.ArgumentParser(
         prog="gst",
-        description="Translate SRT subtitle files using Google Gemini AI",
+        description="Translate SRT subtitle files using OpenAI Compatible API",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
   # Using environment variable (recommended)
     export GEMINI_API_KEY="your_api_key_here"
+    export API_ENDPOINT="https://api.openai.com/v1"  # Optional: for custom endpoints
     gst translate -i subtitle.srt -l French
 
   # Using command line argument
     gst translate -i subtitle.srt -l French -k YOUR_API_KEY
+
+  # Using custom API endpoint (OpenAI compatible backend)
+    gst translate -i subtitle.srt -l French -k YOUR_API_KEY --api-endpoint https://your-api.com/v1
 
   # Set output file name
     gst translate -i subtitle.srt -l French -o translated_subtitle.srt
@@ -180,7 +186,7 @@ Examples:
     gst translate -i subtitle.srt -l French --quiet
   
   # List available models
-    gst list-models -k YOUR_API_KEY
+    gst list-models -k YOUR_API_KEY --api-endpoint https://your-api.com/v1
         """,
     )
 
@@ -195,15 +201,16 @@ Examples:
     required_group.add_argument("-v", "--video-file", help="Video file path (for SRT/Audio extraction)")
 
     translate_parser.add_argument("-l", "--target-language", help="Target language for translation")
-    translate_parser.add_argument("-k", "--api-key", help="Gemini API key")
+    translate_parser.add_argument("-k", "--api-key", help="API key (OpenAI compatible)")
+    translate_parser.add_argument("--api-endpoint", help="API endpoint URL (for OpenAI compatible backends)")
 
     # Optional arguments
-    translate_parser.add_argument("-k2", "--api-key2", help="Secondary Gemini API key for additional quota")
+    translate_parser.add_argument("-k2", "--api-key2", help="Secondary API key for additional quota")
     translate_parser.add_argument("-o", "--output-file", help="Output file path")
     translate_parser.add_argument("-a", "--audio-file", help="Audio file for context")
     translate_parser.add_argument("-s", "--start-line", type=int, help="Starting line number")
     translate_parser.add_argument("-d", "--description", help="Description for translation context")
-    translate_parser.add_argument("-m", "--model", help="Gemini model to use")
+    translate_parser.add_argument("-m", "--model", help="Model to use (default: gpt-4o)")
     translate_parser.add_argument("-b", "--batch-size", type=int, help="Batch size for translation")
     translate_parser.add_argument("--temperature", type=float, help="Temperature (0.0-2.0)")
     translate_parser.add_argument("--top-p", type=float, help="Top P (0.0-1.0)")
@@ -231,8 +238,9 @@ Examples:
     )
 
     # List models command
-    list_parser = subparsers.add_parser("list-models", help="List available Gemini models")
-    list_parser.add_argument("-k", "--api-key", help="Gemini API key")
+    list_parser = subparsers.add_parser("list-models", help="List available models")
+    list_parser.add_argument("-k", "--api-key", help="API key")
+    list_parser.add_argument("--api-endpoint", help="API endpoint URL (for OpenAI compatible backends)")
 
     return parser
 

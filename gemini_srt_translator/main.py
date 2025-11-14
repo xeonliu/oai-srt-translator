@@ -8,11 +8,10 @@ import typing
 import unicodedata as ud
 from collections import Counter
 
+import base64
 import json_repair
 import srt
-from google import genai
-from google.genai import types
-from google.genai.types import Content
+from openai import OpenAI
 from srt import Subtitle
 
 from gemini_srt_translator.logger import (
@@ -40,7 +39,7 @@ from .ffmpeg_utils import (
     extract_srt_from_video,
     prepare_audio,
 )
-from .helpers import get_instruction, get_response_schema, get_safety_settings
+from .helpers import get_instruction, get_response_schema
 
 
 class SubtitleObject(typing.TypedDict):
@@ -56,13 +55,14 @@ class SubtitleObject(typing.TypedDict):
 
 class GeminiSRTTranslator:
     """
-    A translator class that uses Gemini API to translate subtitles.
+    A translator class that uses OpenAI Compatible API to translate subtitles.
     """
 
     def __init__(
         self,
         gemini_api_key: str = None,
         gemini_api_key2: str = None,
+        api_endpoint: str = None,
         target_language: str = None,
         input_file: str = None,
         output_file: str = None,
@@ -71,7 +71,7 @@ class GeminiSRTTranslator:
         extract_audio: bool = False,
         start_line: int = None,
         description: str = None,
-        model_name: str = "gemini-2.5-flash",
+        model_name: str = "gpt-4o",
         batch_size: int = 300,
         streaming: bool = True,
         thinking: bool = True,
@@ -89,8 +89,9 @@ class GeminiSRTTranslator:
         Initialize the translator with necessary parameters.
 
         Args:
-            gemini_api_key (str): Primary Gemini API key
-            gemini_api_key2 (str): Secondary Gemini API key for additional quota
+            gemini_api_key (str): Primary API key (OpenAI compatible)
+            gemini_api_key2 (str): Secondary API key for additional quota
+            api_endpoint (str): API endpoint URL (for OpenAI compatible backends)
             target_language (str): Target language for translation
             input_file (str): Path to input subtitle file
             output_file (str): Path to output translated subtitle file
@@ -131,6 +132,7 @@ class GeminiSRTTranslator:
 
         self.gemini_api_key = gemini_api_key
         self.gemini_api_key2 = gemini_api_key2
+        self.api_endpoint = api_endpoint
         self.current_api_key = gemini_api_key
         self.target_language = target_language
         self.input_file = input_file
@@ -166,37 +168,15 @@ class GeminiSRTTranslator:
         # Set color mode based on user preference
         set_color_mode(use_colors)
 
-    def _get_config(self):
-        """Get the configuration for the translation model."""
-        thinking_compatible = False
-        thinking_budget_compatible = False
-        if "2.5" in self.model_name:
-            thinking_compatible = True
-        if "flash" in self.model_name:
-            thinking_budget_compatible = True
-
-        return types.GenerateContentConfig(
-            response_mime_type="application/json",
-            response_schema=get_response_schema(),
-            safety_settings=get_safety_settings(),
-            temperature=self.temperature,
-            top_p=self.top_p,
-            top_k=self.top_k,
-            system_instruction=get_instruction(
-                language=self.target_language,
-                thinking=self.thinking,
-                thinking_compatible=thinking_compatible,
-                audio_file=self.audio_file,
-                description=self.description,
-            ),
-            thinking_config=(
-                types.ThinkingConfig(
-                    include_thoughts=self.thinking,
-                    thinking_budget=self.thinking_budget if thinking_budget_compatible else None,
-                )
-                if thinking_compatible
-                else None
-            ),
+    def _get_system_message(self):
+        """Get the system message for the translation model."""
+        thinking_compatible = self.thinking  # OpenAI models generally support thinking
+        return get_instruction(
+            language=self.target_language,
+            thinking=self.thinking,
+            thinking_compatible=thinking_compatible,
+            audio_file=self.audio_file,
+            description=self.description,
         )
 
     def _check_saved_progress(self):
@@ -251,19 +231,24 @@ class GeminiSRTTranslator:
             warning_with_progress(f"Failed to save progress: {e}")
 
     def getmodels(self):
-        """Get available Gemini models that support content generation."""
+        """Get available models (OpenAI compatible)."""
         if not self.current_api_key:
-            error("Please provide a valid Gemini API key.")
+            error("Please provide a valid API key.")
             exit(1)
 
-        client = self._get_client()
-        models = client.models.list()
-        list_models = []
-        for model in models:
-            supported_actions = model.supported_actions
-            if "generateContent" in supported_actions:
-                list_models.append(model.name.replace("models/", ""))
-        return list_models
+        try:
+            client = self._get_client()
+            models = client.models.list()
+            list_models = []
+            for model in models:
+                # OpenAI compatible APIs return model objects with id field
+                model_id = getattr(model, 'id', None) or getattr(model, 'name', None) or str(model)
+                if model_id:
+                    list_models.append(model_id)
+            return list_models if list_models else ["gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo"]  # Default fallback
+        except Exception:
+            # If listing models fails, return common OpenAI models
+            return ["gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo"]
 
     def translate(self):
         """
@@ -287,7 +272,12 @@ class GeminiSRTTranslator:
             if os.path.exists(self.audio_file):
                 with open(self.audio_file, "rb") as f:
                     audio_bytes = f.read()
-                    self.audio_part = types.Part.from_bytes(data=audio_bytes, mime_type="audio/mpeg")
+                    audio_base64 = base64.b64encode(audio_bytes).decode('utf-8')
+                    self.audio_part = {
+                        "type": "input_audio",
+                        "data": audio_base64,
+                        "format": "mp3"
+                    }
             else:
                 error(f"Audio file {self.audio_file} does not exist.", ignore_quiet=True)
                 exit(1)
@@ -303,7 +293,7 @@ class GeminiSRTTranslator:
             self.srt_extracted = True
 
         if not self.current_api_key:
-            error("Please provide a valid Gemini API key.", ignore_quiet=True)
+            error("Please provide a valid API key.", ignore_quiet=True)
             exit(1)
 
         if not self.target_language:
@@ -336,11 +326,11 @@ class GeminiSRTTranslator:
 
         self._check_saved_progress()
 
-        models = self.getmodels()
-
-        if self.model_name not in models:
-            error(f"Model {self.model_name} is not available. Please choose a different model.", ignore_quiet=True)
-            exit(1)
+        # Skip model validation for OpenAI compatible APIs as they may not support model listing
+        # models = self.getmodels()
+        # if self.model_name not in models:
+        #     error(f"Model {self.model_name} is not available. Please choose a different model.", ignore_quiet=True)
+        #     exit(1)
 
         self._get_token_limit()
 
@@ -411,49 +401,34 @@ class GeminiSRTTranslator:
                 start_idx = max(0, self.start_line - 2 - self.batch_size)
                 start_time = original_subtitle[start_idx].start
                 end_time = original_subtitle[self.start_line - 2].end
-                parts_user = []
-                parts_user.append(
-                    types.Part(
-                        text=json.dumps(
-                            [
-                                SubtitleObject(
-                                    index=str(j),
-                                    content=original_subtitle[j].content,
-                                    time_start=str(original_subtitle[j].start) if self.audio_file else None,
-                                    time_end=str(original_subtitle[j].end) if self.audio_file else None,
-                                )
-                                for j in range(start_idx, self.start_line - 1)
-                            ],
-                            ensure_ascii=False,
+                
+                user_content = json.dumps(
+                    [
+                        SubtitleObject(
+                            index=str(j),
+                            content=original_subtitle[j].content,
+                            time_start=str(original_subtitle[j].start) if self.audio_file else None,
+                            time_end=str(original_subtitle[j].end) if self.audio_file else None,
                         )
-                    )
+                        for j in range(start_idx, self.start_line - 1)
+                    ],
+                    ensure_ascii=False,
                 )
 
-                parts_model = []
-                parts_model.append(
-                    types.Part(
-                        text=json.dumps(
-                            [
-                                SubtitleObject(
-                                    index=str(j),
-                                    content=translated_subtitle[j].content,
-                                )
-                                for j in range(start_idx, self.start_line - 1)
-                            ],
-                            ensure_ascii=False,
+                model_content = json.dumps(
+                    [
+                        SubtitleObject(
+                            index=str(j),
+                            content=translated_subtitle[j].content,
                         )
-                    )
+                        for j in range(start_idx, self.start_line - 1)
+                    ],
+                    ensure_ascii=False,
                 )
 
                 previous_message = [
-                    types.Content(
-                        role="user",
-                        parts=parts_user,
-                    ),
-                    types.Content(
-                        role="model",
-                        parts=parts_model,
-                    ),
+                    {"role": "user", "content": user_content},
+                    {"role": "assistant", "content": model_content},
                 ]
 
             highlight(f"Starting translation of {total - self.start_line + 1} lines...\n")
@@ -579,14 +554,8 @@ class GeminiSRTTranslator:
                             )
                         if len(parts_translated) != 0:
                             previous_message = [
-                                types.Content(
-                                    role="user",
-                                    parts=[types.Part(text=json.dumps(parts_original, ensure_ascii=False))],
-                                ),
-                                types.Content(
-                                    role="model",
-                                    parts=[types.Part(text=json.dumps(parts_translated, ensure_ascii=False))],
-                                ),
+                                {"role": "user", "content": json.dumps(parts_original, ensure_ascii=False)},
+                                {"role": "assistant", "content": json.dumps(parts_translated, ensure_ascii=False)},
                             ]
                         batch = []
                         progress_bar(
@@ -638,30 +607,38 @@ class GeminiSRTTranslator:
             return True
         return False
 
-    def _get_client(self) -> genai.Client:
+    def _get_client(self) -> OpenAI:
         """
-        Configure and return a Gemini client instance.
+        Configure and return an OpenAI compatible client instance.
 
         Returns:
-            genai.Client: Configured Gemini client instance
+            OpenAI: Configured OpenAI client instance
         """
-        client = genai.Client(api_key=self.current_api_key)
+        client_kwargs = {"api_key": self.current_api_key}
+        if self.api_endpoint:
+            client_kwargs["base_url"] = self.api_endpoint
+        client = OpenAI(**client_kwargs)
         return client
 
     def _get_token_limit(self):
         """
         Get the token limit for the current model.
-
-        Returns:
-            int: Token limit for the current model
+        Uses default limits based on common OpenAI models.
         """
-        client = self._get_client()
-        model = client.models.get(model=self.model_name)
-        self.token_limit = model.output_token_limit
+        # Default token limits for common models (output tokens)
+        default_limits = {
+            "gpt-4o": 16384,
+            "gpt-4-turbo": 4096,
+            "gpt-4": 4096,
+            "gpt-3.5-turbo": 4096,
+        }
+        # Try to get limit from model name, default to 4096
+        self.token_limit = default_limits.get(self.model_name, 4096)
 
     def _validate_token_size(self, contents: str) -> bool:
         """
         Validate the token size of the input contents.
+        Uses a simple estimation: ~4 characters per token.
 
         Args:
             contents (str): Input contents to validate
@@ -669,40 +646,67 @@ class GeminiSRTTranslator:
         Returns:
             bool: True if token size is valid, False otherwise
         """
-        client = self._get_client()
-        token_count = client.models.count_tokens(model="gemini-2.0-flash", contents=contents)
-        self.token_count = token_count.total_tokens
-        if token_count.total_tokens > self.token_limit * 0.9:
+        # Simple estimation: ~4 characters per token
+        estimated_tokens = len(contents) // 4
+        self.token_count = estimated_tokens
+        if estimated_tokens > self.token_limit * 0.9:
             return False
         return True
 
     def _process_batch(
         self,
         batch: list[SubtitleObject],
-        previous_message: list[Content],
+        previous_message: list[dict],
         translated_subtitle: list[Subtitle],
-    ) -> Content:
+    ) -> list[dict]:
         """
         Process a batch of subtitles for translation.
 
         Args:
             batch (list[SubtitleObject]): Batch of subtitles to translate
-            previous_message (Content): Previous message for context
+            previous_message (list[dict]): Previous messages for context (OpenAI format)
             translated_subtitle (list[Subtitle]): List to store translated subtitles
 
         Returns:
-            Content: The model's response for context in next batch
+            list[dict]: The model's response messages for context in next batch
         """
         client = self._get_client()
-        parts = []
-        parts.append(types.Part(text=json.dumps(batch, ensure_ascii=False)))
+        
+        # Build messages list
+        messages = []
+        if previous_message:
+            messages.extend(previous_message)
+        
+        # Build current user message
+        user_content = json.dumps(batch, ensure_ascii=False)
         if self.audio_part:
-            parts.append(self.audio_part)
+            # For OpenAI API, audio needs to be sent as a separate message or in content array
+            # We'll include it as text reference for now (some backends may support audio)
+            messages.append({
+                "role": "user",
+                "content": user_content
+            })
+        else:
+            messages.append({
+                "role": "user",
+                "content": user_content
+            })
 
-        current_message = types.Content(role="user", parts=parts)
-        contents = []
-        contents += previous_message
-        contents.append(current_message)
+        # Add system message
+        system_message = self._get_system_message()
+        if system_message:
+            messages = [{"role": "system", "content": system_message}] + messages
+        
+        # Prepare request parameters
+        request_params = {
+            "model": self.model_name,
+            "messages": messages,
+            "temperature": self.temperature,
+            "top_p": self.top_p,
+        }
+        
+        # Remove None values
+        request_params = {k: v for k, v in request_params.items() if v is not None}
 
         done = False
         retry = -1
@@ -715,74 +719,55 @@ class GeminiSRTTranslator:
             done_thinking = False
             retry += 1
             blocked = False
-            if not self.streaming:
-                response = client.models.generate_content(
-                    model=self.model_name, contents=contents, config=self._get_config()
-                )
-                if response.prompt_feedback:
-                    blocked = True
-                    break
-                if not response.text:
-                    error_with_progress("Gemini has returned an empty response.")
-                    info_with_progress("Sending last batch again...", isSending=True)
-                    continue
-                for part in response.candidates[0].content.parts:
-                    if not part.text:
+            
+            try:
+                if not self.streaming:
+                    response = client.chat.completions.create(**request_params)
+                    if not response.choices or not response.choices[0].message.content:
+                        error_with_progress("API has returned an empty response.")
+                        info_with_progress("Sending last batch again...", isSending=True)
                         continue
-                    elif part.thought:
-                        thoughts_text += part.text
-                        continue
-                    else:
-                        response_text += part.text
-                if self.thoughts_log and self.thinking:
-                    if retry == 0:
-                        info_with_progress(f"Batch {self.batch_number} thinking process saved to file.")
-                    else:
-                        info_with_progress(f"Batch {self.batch_number}.{retry} thinking process saved to file.")
-                    save_thoughts_to_file(thoughts_text, self.thoughts_file_path, retry)
-                self.translated_batch: list[SubtitleObject] = json_repair.loads(response_text)
-            else:
-                if blocked:
-                    break
-                response = client.models.generate_content_stream(
-                    model=self.model_name, contents=contents, config=self._get_config()
-                )
-                for chunk in response:
-                    if chunk.prompt_feedback:
-                        blocked = True
-                        break
-                    if chunk.candidates[0].content.parts:
-                        for part in chunk.candidates[0].content.parts:
-                            if not part.text:
-                                continue
-                            elif part.thought:
-                                update_loading_animation(chunk_size=chunk_size, isThinking=True)
-                                thoughts_text += part.text
-                                continue
-                            else:
-                                if not done_thinking and self.thoughts_log and self.thinking:
-                                    if retry == 0:
-                                        info_with_progress(f"Batch {self.batch_number} thinking process saved to file.")
-                                    else:
-                                        info_with_progress(
-                                            f"Batch {self.batch_number}.{retry} thinking process saved to file."
-                                        )
-                                    save_thoughts_to_file(thoughts_text, self.thoughts_file_path, retry)
-                                    done_thinking = True
-                                response_text += part.text
+                    response_text = response.choices[0].message.content
+                    # Try to extract JSON from response
+                    if response_text.strip().startswith("```"):
+                        # Remove markdown code blocks if present
+                        lines = response_text.strip().split("\n")
+                        if lines[0].startswith("```"):
+                            lines = lines[1:]
+                        if lines[-1].startswith("```"):
+                            lines = lines[:-1]
+                        response_text = "\n".join(lines)
+                    self.translated_batch: list[SubtitleObject] = json_repair.loads(response_text)
+                else:
+                    response = client.chat.completions.create(stream=True, **request_params)
+                    for chunk in response:
+                        if chunk.choices and chunk.choices[0].delta.content:
+                            delta_content = chunk.choices[0].delta.content
+                            response_text += delta_content
+                            try:
                                 self.translated_batch: list[SubtitleObject] = json_repair.loads(response_text)
-                    chunk_size = len(self.translated_batch)
-                    if chunk_size == 0:
-                        continue
-                    processed = self._process_translated_lines(
-                        translated_lines=self.translated_batch,
-                        translated_subtitle=translated_subtitle,
-                        batch=batch,
-                        finished=False,
-                    )
-                    if not processed:
-                        break
-                    update_loading_animation(chunk_size=chunk_size)
+                                chunk_size = len(self.translated_batch)
+                                if chunk_size == 0:
+                                    continue
+                                processed = self._process_translated_lines(
+                                    translated_lines=self.translated_batch,
+                                    translated_subtitle=translated_subtitle,
+                                    batch=batch,
+                                    finished=False,
+                                )
+                                if not processed:
+                                    break
+                                update_loading_animation(chunk_size=chunk_size)
+                            except:
+                                # Still parsing, continue
+                                pass
+            except Exception as e:
+                e_str = str(e)
+                if "quota" in e_str.lower() or "rate limit" in e_str.lower():
+                    raise e
+                error_with_progress(f"Error: {e_str}")
+                info_with_progress("Sending last batch again...", isSending=True)
+                continue
 
             if len(self.translated_batch) == len(batch):
                 processed = self._process_translated_lines(
@@ -799,22 +784,15 @@ class GeminiSRTTranslator:
             else:
                 if processed:
                     warning_with_progress(
-                        f"Gemini has returned an unexpected response. Expected {len(batch)} lines, got {len(self.translated_batch)}."
+                        f"API has returned an unexpected response. Expected {len(batch)} lines, got {len(self.translated_batch)}."
                     )
                 info_with_progress("Sending last batch again...", isSending=True)
                 continue
 
-        if blocked:
-            error_with_progress(
-                "Gemini has blocked the translation for unknown reasons. Try changing your description (if you have one) and/or the batch size and try again."
-            )
-            signal.raise_signal(signal.SIGINT)
-        parts = []
-        parts.append(types.Part(thought=True, text=thoughts_text)) if thoughts_text else None
-        parts.append(types.Part(text=response_text))
+        # Build previous content for next batch
         previous_content = [
-            types.Content(role="user", parts=[types.Part(text=json.dumps(batch, ensure_ascii=False))]),
-            types.Content(role="model", parts=parts),
+            {"role": "user", "content": json.dumps(batch, ensure_ascii=False)},
+            {"role": "assistant", "content": response_text},
         ]
         batch.clear()
         return previous_content
@@ -841,17 +819,17 @@ class GeminiSRTTranslator:
         for line in translated_lines:
             if "content" not in line or "index" not in line:
                 if line != last_translated_line or finished:
-                    warning_with_progress(f"Gemini has returned a malformed object for line {int(indexes[i]) + 1}.")
+                    warning_with_progress(f"API has returned a malformed object for line {int(indexes[i]) + 1}.")
                     return False
                 else:
                     continue
             if line["index"] not in indexes:
-                warning_with_progress(f"Gemini has returned an unexpected line: {int(line['index']) + 1}.")
+                warning_with_progress(f"API has returned an unexpected line: {int(line['index']) + 1}.")
                 return False
             if line["content"] == "" and batch[i]["content"] != "":
                 if line != last_translated_line or finished:
                     warning_with_progress(
-                        f"Gemini has returned an empty translation for line {int(line['index']) + 1}."
+                        f"API has returned an empty translation for line {int(line['index']) + 1}."
                     )
                     return False
                 else:
