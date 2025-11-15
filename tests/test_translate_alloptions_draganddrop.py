@@ -1,16 +1,16 @@
 import getpass
 import os
 
-import gemini_srt_translator as gst
+import srt_translator as gst
 
-# Set the API key for the Gemini service - check environment first
-gst.gemini_api_key = os.getenv("GEMINI_API_KEY")
-gst.gemini_api_key2 = os.getenv("GEMINI_API_KEY2")
+# Set the API key - check environment first
+gst.api_key = os.getenv("API_KEY")
+gst.api_key2 = os.getenv("API_KEY2")
 
-if not gst.gemini_api_key and not gst.gemini_api_key2:
-    input_gemini_api_key = getpass.getpass("\033[96mEnter your Gemini API key: \033[0m").strip()
-    if input_gemini_api_key:
-        gst.gemini_api_key = input_gemini_api_key
+if not gst.api_key and not gst.api_key2:
+    input_api_key = getpass.getpass("\033[96mEnter your API key: \033[0m").strip()
+    if input_api_key:
+        gst.api_key = input_api_key
 
 # Allow the user to drag and drop the SRT file
 input_file = input("\033[96mDrag and drop the .srt file here and press Enter: \033[0m").strip().strip('"')

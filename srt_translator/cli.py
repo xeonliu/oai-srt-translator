@@ -9,7 +9,7 @@ import os
 import sys
 from typing import Optional
 
-import gemini_srt_translator as gst
+import srt_translator as gst
 
 from .logger import error, info, success
 
@@ -58,8 +58,8 @@ def select_model_interactive(available_models: list) -> str:
 def cmd_translate(args) -> None:
     """Handle translate command."""
     # Set API keys
-    gst.gemini_api_key = args.api_key or get_api_key_from_env("GEMINI_API_KEY") or get_api_key_from_input()
-    gst.gemini_api_key2 = args.api_key2 or get_api_key_from_env("GEMINI_API_KEY2")
+    gst.api_key = args.api_key or get_api_key_from_env("API_KEY") or get_api_key_from_input()
+    gst.api_key2 = args.api_key2 or get_api_key_from_env("API_KEY2")
     gst.api_endpoint = args.api_endpoint or get_api_key_from_env("API_ENDPOINT")
 
     # Validate input file
@@ -138,7 +138,7 @@ def cmd_translate(args) -> None:
 
 def cmd_list_models(args) -> None:
     """Handle list-models command."""
-    gst.gemini_api_key = args.api_key or get_api_key_from_env("GEMINI_API_KEY") or get_api_key_from_input()
+    gst.api_key = args.api_key or get_api_key_from_env("API_KEY") or get_api_key_from_input()
     gst.api_endpoint = args.api_endpoint or get_api_key_from_env("API_ENDPOINT")
 
     try:
@@ -157,7 +157,7 @@ def create_parser() -> argparse.ArgumentParser:
         epilog="""
 Examples:
   # Using environment variable (recommended)
-    export GEMINI_API_KEY="your_api_key_here"
+    export API_KEY="your_api_key_here"
     export API_ENDPOINT="https://api.openai.com/v1"  # Optional: for custom endpoints
     gst translate -i subtitle.srt -l French
 

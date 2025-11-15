@@ -1,31 +1,32 @@
-# 🌟 Gemini SRT Translator
+# 🌟 SRT Translator (OpenAI Compatible)
 
-[![PyPI version](https://img.shields.io/pypi/v/gemini-srt-translator)](https://pypi.org/project/gemini-srt-translator)
-[![Python support](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2FMaKTaiL%2Fgemini-srt-translator%2Frefs%2Fheads%2Fmain%2Fpyproject.toml&color=red)](https://pypi.org/project/gemini-srt-translator)
-[![Downloads](https://img.shields.io/pypi/dw/gemini-srt-translator)](https://pypi.org/project/gemini-srt-translator)
+[![PyPI version](https://img.shields.io/pypi/v/srt-translator)](https://pypi.org/project/srt-translator)
+[![Python support](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2FMaKTaiL%2Fgemini-srt-translator%2Frefs%2Fheads%2Fmain%2Fpyproject.toml&color=red)](https://pypi.org/project/srt-translator)
+[![Downloads](https://img.shields.io/pypi/dw/srt-translator)](https://pypi.org/project/srt-translator)
 [![GitHub contributors](https://img.shields.io/github/contributors/MaKTaiL/gemini-srt-translator)](https://github.com/MaKTaiL/gemini-srt-translator/graphs/contributors)
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-orange?logo=buy-me-a-coffee)](https://www.buymeacoffee.com/maktail)
 
-> Translate SRT subtitle files using the power of Google Gemini AI! 🚀
+> Translate SRT subtitle files using OpenAI Compatible API! 🚀
 
 ---
 
 ## ✨ Overview
 
-**Gemini SRT Translator** is a powerful python tool to translate subtitle files using the power of Google Gemini AI. Perfect for anyone needing fast, accurate, and customizable translations for videos, movies, and series.
+**SRT Translator** is a powerful python tool to translate subtitle files using OpenAI Compatible API. Perfect for anyone needing fast, accurate, and customizable translations for videos, movies, and series. Works with any OpenAI-compatible API endpoint!
 
 ---
 
-- 🔤 **SRT Translation**: Translate `.srt` subtitle files to a wide range of languages supported by Google Gemini AI.
+- 🔤 **SRT Translation**: Translate `.srt` subtitle files to a wide range of languages using OpenAI Compatible API.
 - ⏱️ **Timing & Format**: Ensures that the translated subtitles maintain the exact timestamps and basic SRT formatting of the original file.
 - 💾 **Quick Resume**: Easily resume interrupted translations from where you left off.
-- 🧠 **Advanced AI**: Leverages thinking and reasoning capabilities for more contextually accurate translations (available on Gemini 2.5 models).
+- 🧠 **Advanced AI**: Leverages thinking and reasoning capabilities for more contextually accurate translations.
 - 🖥️ **CLI Support**: Full command-line interface for easy automation and scripting.
 - ⚙️ **Customizable**: Tune model parameters, adjust batch size, and access other advanced settings.
+- 🌐 **Custom API Endpoints**: Support for custom OpenAI-compatible API endpoints.
 - 🎞️ **SRT Extraction**: Extract and translate SRT subtitles from video files automatically (requires [FFmpeg](https://ffmpeg.org/)).
 - 🎵 **Audio Context**: Extract audio from a video file or provide your own to improve translation accuracy (requires [FFmpeg](https://ffmpeg.org/)).
 - 📜 **Description Support**: Add a description to your translation job to guide the AI in using specific terminology or context.
-- 📋 **List Models**: Easily list all currently available Gemini models to choose the best fit for your needs.
+- 📋 **List Models**: Easily list all currently available models from your API endpoint.
 - 🔄 **Auto-Update**: Keep the tool updated with automatic version checking and update prompts.
 - 📝 **Logging**: Optional saving of progress and 'thinking' process logs for review.
 
@@ -36,12 +37,12 @@
 ### Basic:
 
 ```sh
-pip install --upgrade gemini-srt-translator
+pip install --upgrade srt-translator
 ```
 
 ### Recommended: Use a Virtual Environment
 
-It's best practice to use a virtual environment. This is especially recommended as gemini-srt-translator installs several dependencies that could potentially conflict with your existing packages:
+It's best practice to use a virtual environment. This is especially recommended as srt-translator installs several dependencies that could potentially conflict with your existing packages:
 
 ```sh
 # Create a virtual environment
@@ -54,48 +55,55 @@ venv\Scripts\activate
 source venv/bin/activate
 
 # Install inside the virtual environment
-pip install --upgrade gemini-srt-translator
+pip install --upgrade srt-translator
 ```
 
 ---
 
 ## 🔑 How to Get Your API Key
 
-1. Go to [Google AI Studio](https://aistudio.google.com/apikey).
-2. Sign in with your Google account.
-3. Click on **Generate API Key**.
-4. Copy and keep your key safe.
+This tool works with any OpenAI Compatible API. You can use:
 
-### 🔐 Setting Your API Key
+- **OpenAI API**: Get your API key from [OpenAI Platform](https://platform.openai.com/api-keys)
+- **Other OpenAI Compatible Services**: Any service that provides OpenAI-compatible API endpoints (e.g., local models, cloud providers, etc.)
 
-You can provide your API key in several ways:
+### 🔐 Setting Your API Key and Endpoint
 
-1. **Environment Variable (Recommended)**: Set the `GEMINI_API_KEY` environment variable. This is the most secure and recommended method.
+You can provide your API key and endpoint in several ways:
+
+1. **Environment Variable (Recommended)**: Set the `API_KEY` and optionally `API_ENDPOINT` environment variables. This is the most secure and recommended method.
 
 - **macOS/Linux:**
 
   ```bash
-  export GEMINI_API_KEY="your_api_key_here"
-  export GEMINI_API_KEY2="your_second_api_key_here"
+  export API_KEY="your_api_key_here"
+  export API_ENDPOINT="https://api.openai.com/v1"  # Optional: defaults to OpenAI if not set
+  export API_KEY2="your_second_api_key_here"  # Optional: for additional quota
   ```
 
 - **Windows (Command Prompt):**
 
   ```cmd
-  set GEMINI_API_KEY=your_api_key_here
-  set GEMINI_API_KEY2=your_second_api_key_here
+  set API_KEY=your_api_key_here
+  set API_ENDPOINT=https://api.openai.com/v1
+  set API_KEY2=your_second_api_key_here
   ```
 
 - **Windows (PowerShell):**
   ```powershell
-  $env:GEMINI_API_KEY="your_api_key_here"
-  $env:GEMINI_API_KEY2="your_second_api_key_here"  # Optional for additional quota
+  $env:API_KEY="your_api_key_here"
+  $env:API_ENDPOINT="https://api.openai.com/v1"  # Optional
+  $env:API_KEY2="your_second_api_key_here"  # Optional for additional quota
   ```
 
-2. **Command Line Argument**: Use the `-k` or `--api-key` flag
+2. **Command Line Argument**: Use the `-k` or `--api-key` flag and optionally `--api-endpoint`
 
    ```bash
+   # Using OpenAI API (default endpoint)
    gst translate -i subtitle.srt -l French -k YOUR_API_KEY
+   
+   # Using custom endpoint
+   gst translate -i subtitle.srt -l French -k YOUR_API_KEY --api-endpoint https://your-api.com/v1
    ```
 
 3. **Interactive Prompt**: The tool will prompt you if no key is found
@@ -104,11 +112,12 @@ You can provide your API key in several ways:
    gst translate -i subtitle.srt -l French
    ```
 
-4. **Python API**: Set the `gemini_api_key` variable in your script
+4. **Python API**: Set the `api_key` and optionally `api_endpoint` variables in your script
 
    ```python
-   import gemini_srt_translator as gst
-   gst.gemini_api_key = "your_api_key_here"
+   import srt_translator as gst
+   gst.api_key = "your_api_key_here"
+   gst.api_endpoint = "https://api.openai.com/v1"  # Optional
    ```
 
 ---
@@ -121,11 +130,15 @@ You can provide your API key in several ways:
 
 ```bash
 # Using environment variable (recommended)
-export GEMINI_API_KEY="your_api_key_here"
+export API_KEY="your_api_key_here"
+export API_ENDPOINT="https://api.openai.com/v1"  # Optional
 gst translate -i subtitle.srt -l French
 
 # Using command line argument
 gst translate -i subtitle.srt -l French -k YOUR_API_KEY
+
+# Using custom API endpoint
+gst translate -i subtitle.srt -l French -k YOUR_API_KEY --api-endpoint https://your-api.com/v1
 
 # Set output file name
 gst translate -i subtitle.srt -l French -o translated_subtitle.srt
@@ -155,9 +168,10 @@ gst translate \
   -v video.mp4 \
   -l French \
   -k YOUR_API_KEY \
+  --api-endpoint https://api.openai.com/v1 \
   -k2 YOUR_SECOND_API_KEY \
   -o output_french.srt \
-  --model gemini-2.5-pro \
+  --model gpt-4o \
   --batch-size 150 \
   --temperature 0.7 \
   --description "Medical TV series, use medical terminology" \
@@ -181,9 +195,9 @@ gst translate --help
 #### Translating an SRT file
 
 ```python
-import gemini_srt_translator as gst
+import srt_translator as gst
 
-gst.gemini_api_key = "your_api_key_here"
+gst.api_key = "your_api_key_here"
 gst.target_language = "French"
 gst.input_file = "subtitle.srt"
 
@@ -195,9 +209,9 @@ gst.translate()
 Just run again with the same parameters, or specify the start line:
 
 ```python
-import gemini_srt_translator as gst
+import srt_translator as gst
 
-gst.gemini_api_key = "your_api_key_here"
+gst.api_key = "your_api_key_here"
 gst.target_language = "French"
 gst.input_file = "subtitle.srt"
 gst.start_line = 20
@@ -211,7 +225,8 @@ gst.translate()
 
 #### 🔧 GST Parameters
 
-- `gemini_api_key2`: Second key for more quota (useful for free Pro models).
+- `api_endpoint`: API endpoint URL for OpenAI compatible backends (default: None, uses OpenAI if not set).
+- `api_key2`: Second key for more quota (useful for additional API quota).
 - `video_file`: Path to a video file to extract subtitles and/or audio for context (requires [FFmpeg](https://ffmpeg.org/)).
 - `audio_file`: Path to an audio file to use as context for translation (requires [FFmpeg](https://ffmpeg.org/)).
 - `extract_audio`: Whether to extract and use audio context from the video file (default: False).
@@ -229,24 +244,78 @@ gst.translate()
 
 #### 🔬 Model Tuning Parameters
 
-- `model_name`: Gemini model (default: "gemini-2.5-flash-preview-05-20").
+- `model_name`: Model name to use (default: "gpt-4o"). Works with any OpenAI compatible model.
 - `temperature`: Controls randomness in output. Lower for more deterministic, higher for more creative (range: 0.0-2.0).
 - `top_p`: Nucleus sampling parameter (range: 0.0-1.0).
-- `top_k`: Top-k sampling parameter (range: >=0).
+- `top_k`: Top-k sampling parameter (range: >=0). Note: Not all models support this parameter.
 - `streaming`: Enable streamed responses (default: True).
   - Set to `False` for bad internet connections or when using slower models.
 - `thinking`: Enable thinking capability for potentially more accurate translations (default: True).
-  - Only available for Gemini 2.5 models.
+  - Depends on model support.
 - `thinking_budget`: Token budget for the thinking process (default: 2048, range: 0-24576, 0 also disables thinking).
-  - Only available for Gemini 2.5 Flash (for now).
+  - Depends on model support.
 
-#### 💡 Full example:
+---
+
+##   Prompt Design & Customization
+
+###  🔧 Core Translation Prompt
+The tool uses a sophisticated prompt system to ensure high-quality translations:
 
 ```python
-import gemini_srt_translator as gst
+# Example of the generated instruction
+instruction = get_instruction(
+    language="French",
+    thinking=True,
+    thinking_compatible=True,
+    audio_file="movie_audio.mp3",
+    description="Medical drama series, use appropriate medical terminology"
+)
+```
 
-gst.gemini_api_key = "your_api_key_here"
-gst.gemini_api_key2 = "your_api_key2_here"
+###   Advanced Features
+
+#### Thinking & Reasoning
+- **Enabled by default** for more contextually accurate translations
+- **Token budget**: Configurable thinking budget (default: 2048 tokens)
+- **Language-specific grammar**: Applies gender agreement rules based on audio analysis
+
+#### Audio Context Integration
+When audio files are provided, the prompt includes:
+- **Speaker gender detection** from voice characteristics
+- **Grammatical gender rules** for target language
+- **Context-aware addressing** (speaker to male/female/group)
+
+#### Custom Instructions
+Use the `description` parameter to provide specific context:
+- **Domain-specific terminology** (medical, legal, technical)
+- **Style preferences** (formal, informal, regional dialects)
+- **Content-specific guidance** (character names, technical terms, cultural references)
+
+###  📋 Response Schema
+The tool enforces structured output using OpenAI JSON Schema:
+
+```json
+{
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "index": {"type": "string"},
+      "content": {"type": "string"}
+  },
+  "required": ["index", "content"]
+}
+```
+
+####  💡 Full example:
+
+```python
+import srt_translator as gst
+
+gst.api_key = "your_api_key_here"
+gst.api_endpoint = "https://api.openai.com/v1"  # Optional: for custom endpoints
+gst.api_key2 = "your_api_key2_here"
 gst.target_language = "French"
 gst.input_file = "subtitle.srt"
 gst.output_file = "subtitle_translated.srt"
@@ -255,7 +324,7 @@ gst.audio_file = "audio.mp3"
 gst.extract_audio = False
 gst.start_line = 20
 gst.description = "Medical TV series, use medical terms"
-gst.model_name = "gemini-2.5-pro-preview-03-25"
+gst.model_name = "gpt-4o"
 gst.batch_size = 150
 gst.streaming = True
 gst.thinking = True
@@ -281,15 +350,20 @@ gst.translate()
 ### CLI
 
 ```bash
+# List models from default endpoint (OpenAI)
 gst list-models -k YOUR_API_KEY
+
+# List models from custom endpoint
+gst list-models -k YOUR_API_KEY --api-endpoint https://your-api.com/v1
 ```
 
 ### Python API
 
 ```python
-import gemini_srt_translator as gst
+import srt_translator as gst
 
-gst.gemini_api_key = "your_api_key_here"
+gst.api_key = "your_api_key_here"
+gst.api_endpoint = "https://api.openai.com/v1"  # Optional
 gst.listmodels()
 ```
 
@@ -299,8 +373,8 @@ gst.listmodels()
 
 If you prefer a user-friendly graphical interface over command-line usage, be sure to check out:
 
-- **[🔗 Gemini SRT Translator GUI](https://github.com/mkaflowski/Gemini-SRT-translator-GUI) (by @mkaflowski)**
-- **[🔗 Gemini SRT Translator GUI](https://github.com/dane-9/gemini-srt-translator-gui) (by @dane-9)**
+- **[🔗 SRT Translator GUI](https://github.com/mkaflowski/Gemini-SRT-translator-GUI) (by @mkaflowski)**
+- **[🔗 SRT Translator GUI](https://github.com/dane-9/gemini-srt-translator-gui) (by @dane-9)**
 
 Perfect for users who want the same powerful translation capabilities with an intuitive visual interface!
 
@@ -308,7 +382,7 @@ Perfect for users who want the same powerful translation capabilities with an in
 
 ## 📝 License
 
-Distributed under the MIT License. See the [LICENSE](https://github.com/MaKTaiL/gemini-srt-translator?tab=MIT-1-ov-file) file for details.
+Distributed under the MIT License. See the [LICENSE](https://github.com/MaKTaiL/srt-translator?tab=MIT-1-ov-file) file for details.
 
 ---
 

@@ -1,7 +1,7 @@
 import os
 
-import gemini_srt_translator as gst
+import srt_translator as gst
 
-gst.gemini_api_key = os.getenv("GEMINI_API_KEY", "")
+gst.api_key = os.getenv("API_KEY", "")
 
 gst.listmodels()

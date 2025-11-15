@@ -3,9 +3,9 @@ requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "gemini-srt-translator"
+name = "srt-translator"
 version = "2.1.5"
-description = "A tool to translate subtitles using Google Generative AI"
+description = "A tool to translate subtitles using OpenAI Compatible API"
 readme = "README.md"
 license = "MIT"
 authors = [{ name = "Matheus Castro" }]
@@ -31,5 +31,5 @@ classifiers = [
 requires-python = ">=3.10"
 
 [project.scripts]
-gemini-srt-translator = "gemini_srt_translator.cli:main"
-gst = "gemini_srt_translator.cli:main"
+srt-translator = "srt_translator.cli:main"
+gst = "srt_translator.cli:main"

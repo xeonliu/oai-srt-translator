@@ -1,15 +1,15 @@
 """
-# Gemini SRT Translator
-    A tool to translate subtitles using Google Generative AI.
+# SRT Translator (OpenAI Compatible)
+    A tool to translate subtitles using OpenAI Compatible API.
 
 ## Usage:
 
 ### Translate Subtitles
     You can translate subtitles using the `translate` command:
     ```
-    import gemini_srt_translator as gst
+    import srt_translator as gst
 
-    gst.gemini_api_key = "your_gemini_api_key_here"
+    gst.api_key = "your_api_key_here"
     gst.target_language = "French"
     gst.input_file = "subtitle.srt"
 
@@ -20,9 +20,9 @@
 ### List Models
     You can list the available models using the `listmodels` command:
     ```
-    import gemini_srt_translator as gst
+    import srt_translator as gst
 
-    gst.gemini_api_key = "your_gemini_api_key_here"
+    gst.api_key = "your_api_key_here"
     gst.listmodels()
     ```
     This will print a list of available models to the console.
@@ -32,11 +32,11 @@
 import os
 
 from .logger import set_quiet_mode
-from .main import GeminiSRTTranslator
+from .main import SRTTranslator
 from .utils import upgrade_package
 
-gemini_api_key: str = os.getenv("GEMINI_API_KEY", None)
-gemini_api_key2: str = os.getenv("GEMINI_API_KEY2", None)
+api_key: str = os.getenv("API_KEY", None)
+api_key2: str = os.getenv("API_KEY2", None)
 api_endpoint: str = os.getenv("API_ENDPOINT", None)
 target_language: str = None
 input_file: str = None
@@ -65,48 +65,48 @@ resume: bool = None
 
 def getmodels():
     """
-    ## Retrieves available models from the Gemini API.
-        This function configures the genai library with the provided Gemini API key
+    ## Retrieves available models from the API.
+        This function configures the library with the provided API key
         and retrieves a list of available models.
 
     Example:
     ```
-    import gemini_srt_translator as gst
+    import srt_translator as gst
 
-    # Your Gemini API key
-    gst.gemini_api_key = "your_gemini_api_key_here"
+    # Your API key
+    gst.api_key = "your_api_key_here"
 
     models = gst._getmodels()
     print(models)
     ```
 
     Raises:
-        Exception: If the Gemini API key is not provided.
+        Exception: If the API key is not provided.
     """
-    translator = GeminiSRTTranslator(gemini_api_key=gemini_api_key, api_endpoint=api_endpoint)
+    translator = SRTTranslator(api_key=api_key, api_endpoint=api_endpoint)
     return translator.getmodels()
 
 
 def listmodels():
     """
-    ## Lists available models from the Gemini API.
-        This function configures the genai library with the provided Gemini API key
+    ## Lists available models from the API.
+        This function configures the library with the provided API key
         and retrieves a list of available models. It then prints each model to the console.
 
     Example:
     ```
-    import gemini_srt_translator as gst
+    import srt_translator as gst
 
-    # Your Gemini API key
-    gst.gemini_api_key = "your_gemini_api_key_here"
+    # Your API key
+    gst.api_key = "your_api_key_here"
 
     gst.listmodels()
     ```
 
     Raises:
-        Exception: If the Gemini API key is not provided.
+        Exception: If the API key is not provided.
     """
-    translator = GeminiSRTTranslator(gemini_api_key=gemini_api_key, api_endpoint=api_endpoint)
+    translator = SRTTranslator(api_key=api_key, api_endpoint=api_endpoint)
     models = translator.getmodels()
     if models:
         print("Available models:\n")
@@ -118,17 +118,17 @@ def listmodels():
 
 def translate():
     """
-    ## Translates a subtitle file using the Gemini API.
-        This function configures the genai library with the provided Gemini API key
+    ## Translates a subtitle file using the API.
+        This function configures the library with the provided API key
         and translates the dialogues in the subtitle file to the target language.
         The translated dialogues are then written to a new subtitle file.
 
     Example:
     ```
-    import gemini_srt_translator as gst
+    import srt_translator as gst
 
-    # Your Gemini API key
-    gst.gemini_api_key = "your_gemini_api_key_here"
+    # Your API key
+    gst.api_key = "your_api_key_here"
 
     # Target language for translation
     gst.target_language = "French"
@@ -136,8 +136,8 @@ def translate():
     # Path to the subtitle file to translate
     gst.input_file = "subtitle.srt"
 
-    # (Optional) Gemini API key 2 for additional quota
-    gst.gemini_api_key2 = "your_gemini_api_key2_here"
+    # (Optional) API key 2 for additional quota
+    gst.api_key2 = "your_api_key2_here"
 
     # (Optional) Path to video file for srt extraction (if needed) and/or for audio context
     gst.video_file = "movie.mkv"
@@ -157,8 +157,8 @@ def translate():
     # (Optional) Additional description of the translation task
     gst.description = "This subtitle is from a TV Series called 'Friends'."
 
-    # (Optional) Model name to use for translation (default: "gemini-2.5-flash-preview-05-20")
-    gst.model_name = "gemini-2.5-flash-preview-05-20"
+    # (Optional) Model name to use for translation (default: "gpt-4o")
+    gst.model_name = "gpt-4o"
 
     # (Optional) Batch size for translation (default: 300)
     gst.batch_size = 300
@@ -205,13 +205,13 @@ def translate():
     gst.translate()
     ```
     Raises:
-        Exception: If the Gemini API key is not provided.
+        Exception: If the API key is not provided.
         Exception: If the target language is not provided.
         Exception: If the subtitle file is not provided.
     """
     params = {
-        "gemini_api_key": gemini_api_key,
-        "gemini_api_key2": gemini_api_key2,
+        "api_key": api_key,
+        "api_key2": api_key2,
         "api_endpoint": api_endpoint,
         "target_language": target_language,
         "input_file": input_file,
@@ -238,7 +238,7 @@ def translate():
 
     if not skip_upgrade:
         try:
-            upgrade_package("gemini-srt-translator", use_colors=use_colors)
+            upgrade_package("srt-translator", use_colors=use_colors)
             raise Exception("Upgrade completed.")
         except Exception:
             pass
@@ -248,5 +248,5 @@ def translate():
 
     # Filter out None values
     filtered_params = {k: v for k, v in params.items() if v is not None}
-    translator = GeminiSRTTranslator(**filtered_params)
+    translator = SRTTranslator(**filtered_params)
     translator.translate()

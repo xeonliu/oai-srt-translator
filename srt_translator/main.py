@@ -1,4 +1,4 @@
-# gemini_srt_translator.py
+# srt_translator.py
 
 import json
 import os
@@ -14,7 +14,7 @@ import srt
 from openai import OpenAI
 from srt import Subtitle
 
-from gemini_srt_translator.logger import (
+from srt_translator.logger import (
     error,
     error_with_progress,
     get_last_chunk_size,
@@ -53,15 +53,15 @@ class SubtitleObject(typing.TypedDict):
     time_end: typing.Optional[str] = None
 
 
-class GeminiSRTTranslator:
+class SRTTranslator:
     """
     A translator class that uses OpenAI Compatible API to translate subtitles.
     """
 
     def __init__(
         self,
-        gemini_api_key: str = None,
-        gemini_api_key2: str = None,
+        api_key: str = None,
+        api_key2: str = None,
         api_endpoint: str = None,
         target_language: str = None,
         input_file: str = None,
@@ -89,8 +89,8 @@ class GeminiSRTTranslator:
         Initialize the translator with necessary parameters.
 
         Args:
-            gemini_api_key (str): Primary API key (OpenAI compatible)
-            gemini_api_key2 (str): Secondary API key for additional quota
+            api_key (str): Primary API key (OpenAI compatible)
+            api_key2 (str): Secondary API key for additional quota
             api_endpoint (str): API endpoint URL (for OpenAI compatible backends)
             target_language (str): Target language for translation
             input_file (str): Path to input subtitle file
@@ -100,7 +100,7 @@ class GeminiSRTTranslator:
             extract_audio (bool): Whether to extract audio from video for translation
             start_line (int): Line number to start translation from
             description (str): Additional instructions for translation
-            model_name (str): Gemini model to use
+            model_name (str): AI model to use
             batch_size (int): Number of subtitles to process in each batch
             streaming (bool): Whether to use streamed responses
             thinking (bool): Whether to use thinking mode
@@ -130,10 +130,10 @@ class GeminiSRTTranslator:
 
         self.progress_file = os.path.join(dir_path, f"{base_name}.progress") if dir_path else f"{base_name}.progress"
 
-        self.gemini_api_key = gemini_api_key
-        self.gemini_api_key2 = gemini_api_key2
+        self.api_key = api_key
+        self.api_key2 = api_key2
         self.api_endpoint = api_endpoint
-        self.current_api_key = gemini_api_key
+        self.current_api_key = api_key
         self.target_language = target_language
         self.input_file = input_file
         self.video_file = video_file
@@ -387,7 +387,7 @@ class GeminiSRTTranslator:
 
             if "pro" in self.model_name and self.free_quota:
                 delay = True
-                if not self.gemini_api_key2:
+                if not self.api_key2:
                     info("Pro model and free user quota detected.\n")
                 else:
                     delay_time = 15
@@ -437,7 +437,7 @@ class GeminiSRTTranslator:
             batch.append(SubtitleObject(index=str(i), content=original_subtitle[i].content))
             i += 1
 
-            if self.gemini_api_key2:
+            if self.api_key2:
                 info_with_progress(f"Starting with API Key {self.current_api_number}")
 
             def handle_interrupt(signal_received, frame):
@@ -595,13 +595,13 @@ class GeminiSRTTranslator:
         Returns:
             bool: True if switched successfully, False if no alternative API available
         """
-        if self.current_api_number == 1 and self.gemini_api_key2:
-            self.current_api_key = self.gemini_api_key2
+        if self.current_api_number == 1 and self.api_key2:
+            self.current_api_key = self.api_key2
             self.current_api_number = 2
             self.backup_api_number = 1
             return True
-        if self.current_api_number == 2 and self.gemini_api_key:
-            self.current_api_key = self.gemini_api_key
+        if self.current_api_number == 2 and self.api_key:
+            self.current_api_key = self.api_key
             self.current_api_number = 1
             self.backup_api_number = 2
             return True
